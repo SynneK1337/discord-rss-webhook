@@ -1,11 +1,11 @@
 import asyncio
 import aiohttp
 import xmltodict
+from os import truncate
 
 
 class Config():
     def __init__(self):
-        # Discord related stuff below
         self.name = "Example webhook"
         self.channel_id = "123456789012345678"
         self.token = "2944923849238372913921849758973128973218957893210749802315214-123456"
@@ -33,19 +33,23 @@ async def main():
     async with aiohttp.ClientSession() as session:
         feed = await get_feed_from_rss(session, config.feed_url)
         feed = feed["rss"]["channel"]
-        if feed["item"][0]["title"] != last_package.read():
-            data = {
-                    "content": feed["item"][0]["title"],
-                    "name": config.name,
-                    "avatar": config.avatar,
-                    "channel_id": config.channel_id,
-                    "guild_id": config.guild_id,
-                    "id": config._id,
-                    "token": config.token
-                }
+        for news in feed["item"]:
+            if news["title"] != last_package.read():
+                data = {
+                        "content": news["title"],
+                        "name": config.name,
+                        "avatar": config.avatar,
+                        "channel_id": config.channel_id,
+                        "guild_id": config.guild_id,
+                        "id": config._id,
+                        "token": config.token
+                        }
+                last_package = open("last_package.txt", "w+")
+                last_package.write(news["title"])
+                last_package.truncate()
+                await send_news_via_discord(session, config.webhook_url, data)
+            else:
+                break
 
-            last_package.write(feed["item"][0]["title"])
-            await send_news_via_discord(session, config.webhook_url, data)
-        
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())

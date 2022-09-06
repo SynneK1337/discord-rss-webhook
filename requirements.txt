@@ -1,2 +1,2 @@
-xmltodict
-aiohttp
+xmltodict==0.13.0
+aiohttp==3.8.1
